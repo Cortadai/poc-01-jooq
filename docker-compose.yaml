@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: entelgy-poc1-sqlserver
+    environment:
+      ACCEPT_EULA: Y
+      SA_PASSWORD: "YourStrong!Passw0rd"
+      MSSQL_PID: Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "YourStrong!Passw0rd", "-Q", "SELECT 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - entelgy-network
+
+  # Opcional: SQL Server Management Studio Web (Azure Data Studio alternative)
+  # No es necesario pero ayuda a debugar
+  adminer:
+    image: adminer:latest
+    container_name: entelgy-poc1-adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    networks:
+      - entelgy-network
+    profiles:
+      - debug
+
+volumes:
+  sqlserver_data:
+
+networks:
+  entelgy-network:
+    driver: bridge

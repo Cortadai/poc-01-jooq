@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: poc-01-jooq
+
+  datasource:
+    url: jdbc:sqlserver://localhost:1433;databaseName=entelgy_poc;trustServerCertificate=true
+    username: sa
+    password: YourStrong!Passw0rd
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+  jpa:
+    database-platform: org.hibernate.dialect.SQLServer2012Dialect
+    hibernate:
+      ddl-auto: validate  # No generar tablas, usar Flyway
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baselineOnMigrate: true
+    clean-disabled: true
+
+server:
+  port: 8080
+
+logging:
+  level:
+    root: INFO
+    com.entelgy: DEBUG
+    org.jooq.tools.LoggerListener: DEBUG
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
