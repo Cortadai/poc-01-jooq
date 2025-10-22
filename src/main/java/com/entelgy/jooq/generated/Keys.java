@@ -4,17 +4,8 @@
 package com.entelgy.jooq.generated;
 
 
-import com.entelgy.jooq.generated.tables.Clientes;
-import com.entelgy.jooq.generated.tables.Contratos;
-import com.entelgy.jooq.generated.tables.FlywaySchemaHistory;
-import com.entelgy.jooq.generated.tables.Instalaciones;
-import com.entelgy.jooq.generated.tables.Partes;
-import com.entelgy.jooq.generated.tables.records.ClientesRecord;
-import com.entelgy.jooq.generated.tables.records.ContratosRecord;
-import com.entelgy.jooq.generated.tables.records.FlywaySchemaHistoryRecord;
-import com.entelgy.jooq.generated.tables.records.InstalacionesRecord;
-import com.entelgy.jooq.generated.tables.records.PartesRecord;
-
+import com.entelgy.jooq.generated.tables.*;
+import com.entelgy.jooq.generated.tables.records.*;
 import org.jooq.ForeignKey;
 import org.jooq.TableField;
 import org.jooq.UniqueKey;

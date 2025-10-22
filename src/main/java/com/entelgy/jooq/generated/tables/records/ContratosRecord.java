@@ -5,13 +5,12 @@ package com.entelgy.jooq.generated.tables.records;
 
 
 import com.entelgy.jooq.generated.tables.Contratos;
+import org.jooq.Record1;
+import org.jooq.impl.UpdatableRecordImpl;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-
-import org.jooq.Record1;
-import org.jooq.impl.UpdatableRecordImpl;
 
 
 /**

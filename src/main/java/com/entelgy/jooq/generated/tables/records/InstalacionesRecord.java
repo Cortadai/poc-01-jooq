@@ -5,11 +5,10 @@ package com.entelgy.jooq.generated.tables.records;
 
 
 import com.entelgy.jooq.generated.tables.Instalaciones;
-
-import java.time.LocalDateTime;
-
 import org.jooq.Record1;
 import org.jooq.impl.UpdatableRecordImpl;
+
+import java.time.LocalDateTime;
 
 
 /**

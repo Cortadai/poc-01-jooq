@@ -4,12 +4,7 @@
 package com.entelgy.jooq.generated;
 
 
-import com.entelgy.jooq.generated.tables.Clientes;
-import com.entelgy.jooq.generated.tables.Contratos;
-import com.entelgy.jooq.generated.tables.FlywaySchemaHistory;
-import com.entelgy.jooq.generated.tables.Instalaciones;
-import com.entelgy.jooq.generated.tables.Partes;
-
+import com.entelgy.jooq.generated.tables.*;
 import org.jooq.Index;
 import org.jooq.OrderField;
 import org.jooq.impl.DSL;

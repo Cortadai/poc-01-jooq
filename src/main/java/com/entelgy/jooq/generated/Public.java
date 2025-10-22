@@ -4,18 +4,13 @@
 package com.entelgy.jooq.generated;
 
 
-import com.entelgy.jooq.generated.tables.Clientes;
-import com.entelgy.jooq.generated.tables.Contratos;
-import com.entelgy.jooq.generated.tables.FlywaySchemaHistory;
-import com.entelgy.jooq.generated.tables.Instalaciones;
-import com.entelgy.jooq.generated.tables.Partes;
-
-import java.util.Arrays;
-import java.util.List;
-
+import com.entelgy.jooq.generated.tables.*;
 import org.jooq.Catalog;
 import org.jooq.Table;
 import org.jooq.impl.SchemaImpl;
+
+import java.util.Arrays;
+import java.util.List;
 
 
 /**

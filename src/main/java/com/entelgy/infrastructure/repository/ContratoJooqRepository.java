@@ -1,6 +1,7 @@
 package com.entelgy.infrastructure.repository;
 
 import com.entelgy.domain.model.Contrato;
+import com.entelgy.infrastructure.exception.DuplicateEntryException;
 import com.entelgy.jooq.generated.tables.Contratos;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +18,12 @@ import java.util.Optional;
 
 /**
  * Repository JOOQ para Contratos - REFACTORIZADO CON CODE GENERATION
+ *
+ * Responsabilidades:
+ * - Acceso a datos mediante JOOQ
+ * - Mapeo de Records a Contratos
+ * - Validación de duplicados en INSERT/UPDATE
+ * - Manejo de excepciones de integridad
  */
 @Slf4j
 @Repository
@@ -33,13 +40,11 @@ public class ContratoJooqRepository {
      */
     public Optional<Contrato> findById(Long id) {
         log.debug("Buscando contrato con ID: {}", id);
-
         Record record = dsl
                 .select()
                 .from(CONTRATOS)
                 .where(CONTRATOS.ID.eq(Math.toIntExact(id)))
                 .fetchOne();
-
         return record != null ? Optional.of(recordToContrato(record)) : Optional.empty();
     }
 
@@ -48,14 +53,12 @@ public class ContratoJooqRepository {
      */
     public List<Contrato> findAllActivos() {
         log.debug("Obteniendo todos los contratos activos");
-
         Result<Record> records = dsl
                 .select()
                 .from(CONTRATOS)
                 .where(CONTRATOS.ESTADO.eq("VIGENTE"))
                 .orderBy(CONTRATOS.NUMERO)
                 .fetch();
-
         return records.stream()
                 .map(this::recordToContrato)
                 .toList();
@@ -66,14 +69,12 @@ public class ContratoJooqRepository {
      */
     public List<Contrato> findByClienteId(Long clienteId) {
         log.debug("Buscando contratos para cliente: {}", clienteId);
-
         Result<Record> records = dsl
                 .select()
                 .from(CONTRATOS)
                 .where(CONTRATOS.CLIENTE_ID.eq(Math.toIntExact(clienteId)))
                 .orderBy(CONTRATOS.FECHA_INICIO.desc())
                 .fetch();
-
         return records.stream()
                 .map(this::recordToContrato)
                 .toList();
@@ -84,10 +85,8 @@ public class ContratoJooqRepository {
      */
     public List<Contrato> findProximosAVencer() {
         log.debug("Buscando contratos próximos a vencer");
-
         LocalDate hoy = LocalDate.now();
         LocalDate futuro = hoy.plusDays(30);
-
         Result<Record> records = dsl
                 .select()
                 .from(CONTRATOS)
@@ -98,7 +97,6 @@ public class ContratoJooqRepository {
                 )
                 .orderBy(CONTRATOS.FECHA_FIN.asc())
                 .fetch();
-
         return records.stream()
                 .map(this::recordToContrato)
                 .toList();
@@ -109,16 +107,13 @@ public class ContratoJooqRepository {
      */
     public List<Contrato> findVencidos() {
         log.debug("Buscando contratos vencidos");
-
         LocalDate hoy = LocalDate.now();
-
         Result<Record> records = dsl
                 .select()
                 .from(CONTRATOS)
                 .where(CONTRATOS.FECHA_FIN.lessThan(hoy))
                 .orderBy(CONTRATOS.FECHA_FIN.desc())
                 .fetch();
-
         return records.stream()
                 .map(this::recordToContrato)
                 .toList();
@@ -130,28 +125,22 @@ public class ContratoJooqRepository {
     public List<Contrato> findByFiltros(Long clienteId, String tipoContrato, String estado) {
         log.debug("Buscando contratos con filtros: clienteId={}, tipo={}, estado={}",
                 clienteId, tipoContrato, estado);
-
         var condition = DSL.noCondition();
-
         if (clienteId != null) {
             condition = condition.and(CONTRATOS.CLIENTE_ID.eq(Math.toIntExact(clienteId)));
         }
-
         if (tipoContrato != null && !tipoContrato.isEmpty()) {
             condition = condition.and(CONTRATOS.TIPO_CONTRATO.eq(tipoContrato));
         }
-
         if (estado != null && !estado.isEmpty()) {
             condition = condition.and(CONTRATOS.ESTADO.eq(estado));
         }
-
         Result<Record> records = dsl
                 .select()
                 .from(CONTRATOS)
                 .where(condition)
                 .orderBy(CONTRATOS.FECHA_INICIO.desc())
                 .fetch();
-
         return records.stream()
                 .map(this::recordToContrato)
                 .toList();
@@ -161,10 +150,31 @@ public class ContratoJooqRepository {
 
     /**
      * Inserta nuevo contrato
+     *
+     * Valida que no exista ya un contrato con el mismo número
+     *
+     * @param contrato Contrato a guardar
+     * @return Contrato guardado con ID generado
+     * @throws DuplicateEntryException si ya existe un contrato con ese número
      */
     public Contrato save(Contrato contrato) {
         log.debug("Guardando nuevo contrato: {}", contrato.getNumero());
 
+        // VALIDACIÓN: Verificar si ya existe contrato con ese número
+        long countExistentes = dsl
+                .selectCount()
+                .from(CONTRATOS)
+                .where(CONTRATOS.NUMERO.eq(contrato.getNumero()))
+                .fetchOne(0, Long.class);
+
+        if (countExistentes > 0) {
+            log.warn("Intento de crear contrato duplicado con número: {}", contrato.getNumero());
+            throw new DuplicateEntryException(
+                    "Ya existe un contrato con número: " + contrato.getNumero()
+            );
+        }
+
+        // INSERT
         int result = dsl
                 .insertInto(CONTRATOS)
                 .set(CONTRATOS.NUMERO, contrato.getNumero())
@@ -186,7 +196,7 @@ public class ContratoJooqRepository {
         if (result > 0) {
             log.debug("Contrato guardado exitosamente");
 
-            // Recuperar contrato insertado
+            // Recuperar contrato insertado (con ID generado)
             Record record = dsl
                     .select()
                     .from(CONTRATOS)
@@ -203,6 +213,9 @@ public class ContratoJooqRepository {
 
     /**
      * Actualiza un contrato existente
+     *
+     * @param contrato Contrato con datos actualizados
+     * @return Contrato actualizado
      */
     public Contrato update(Contrato contrato) {
         log.debug("Actualizando contrato: {}", contrato.getId());
@@ -217,6 +230,8 @@ public class ContratoJooqRepository {
 
         if (result > 0) {
             log.debug("Contrato actualizado exitosamente");
+        } else {
+            log.warn("No se actualizó contrato con ID: {}", contrato.getId());
         }
 
         return contrato;
