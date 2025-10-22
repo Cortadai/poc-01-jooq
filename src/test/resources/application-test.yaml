@@ -1,0 +1,39 @@
+spring:
+  datasource:
+    # TestContainers: PostgreSQL real en Docker
+    url: jdbc:tc:postgresql:17:///testdb
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    username: test
+    password: test
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          batch_size: 20
+
+  jooq:
+    sql-dialect: POSTGRES
+
+  sql:
+    init:
+      mode: never
+
+  flyway:
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    table: flyway_schema_history
+
+logging:
+  level:
+    root: INFO
+    com.entelgy: DEBUG
+    org.jooq.tools: DEBUG
+    org.flywaydb: DEBUG
+    org.testcontainers: DEBUG
