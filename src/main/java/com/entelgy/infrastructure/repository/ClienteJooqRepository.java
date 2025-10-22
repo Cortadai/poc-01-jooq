@@ -102,6 +102,35 @@ public class ClienteJooqRepository {
     }
 
     /**
+     * Elimina todos los clientes (usado en tests)
+     */
+    public void delete() {
+        log.debug("Eliminando todos los clientes");
+        int result = dsl
+                .deleteFrom(CLIENTES)
+                .execute();
+        log.debug("Se eliminaron {} clientes", result);
+    }
+
+    /**
+     * Elimina un cliente por ID
+     *
+     * @param id ID del cliente a eliminar
+     */
+    public void deleteById(Integer id) {
+        log.debug("Eliminando cliente con ID: {}", id);
+        int result = dsl
+                .deleteFrom(CLIENTES)
+                .where(CLIENTES.ID.eq(id))
+                .execute();
+        if (result > 0) {
+            log.debug("Cliente eliminado exitosamente");
+        } else {
+            log.warn("No se encontró cliente con ID: {}", id);
+        }
+    }
+
+    /**
      * Convierte Record a Cliente
      */
     private Cliente recordToCliente(Record record) {

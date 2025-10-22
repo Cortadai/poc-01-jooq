@@ -237,6 +237,36 @@ public class ContratoJooqRepository {
         return contrato;
     }
 
+    /**
+     * Elimina todos los contratos (usado en tests)
+     *
+     */
+    public void delete() {
+        log.debug("Eliminando todos los contratos");
+        int result = dsl
+                .deleteFrom(CONTRATOS)
+                .execute();
+        log.debug("Se eliminaron {} contratos", result);
+    }
+
+    /**
+     * Elimina un contrato por ID
+     *
+     * @param id ID del contrato a eliminar
+     */
+    public void deleteById(Integer id) {
+        log.debug("Eliminando contrato con ID: {}", id);
+        int result = dsl
+                .deleteFrom(CONTRATOS)
+                .where(CONTRATOS.ID.eq(id))
+                .execute();
+        if (result > 0) {
+            log.debug("Contrato eliminado exitosamente");
+        } else {
+            log.warn("No se encontró contrato con ID: {}", id);
+        }
+    }
+
     // ============= UTILIDADES =============
 
     /**
