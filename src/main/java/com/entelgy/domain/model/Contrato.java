@@ -4,20 +4,22 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Contrato {
-    private Long id;
+    private Integer id;                    // ← CAMBIO: Long → Integer
     private String numero;
-    private Long clienteId;
-    private Long instalacionId;
-    private String tipoContrato; // MANTENIMIENTO, REPARACION, REVISION
-    private String estado; // VIGENTE, VENCIDO, CANCELADO, RENOVADO
+    private Integer clienteId;            // ← CAMBIO: Long → Integer
+    private Integer instalacionId;        // ← CAMBIO: Long → Integer
+    private String tipoContrato;
+    private String estado;
     private Boolean coberturaMaterial;
     private Boolean coberturaManoObra;
     private Boolean coberturaFinSemana;
@@ -26,9 +28,9 @@ public class Contrato {
     private BigDecimal precioAnual;
     private Integer porcentajeCentral;
     private Integer empresaId;
-    private String fechaCreacion;
+    private LocalDateTime fechaCreacion;  // ← CAMBIO: String → LocalDateTime
     private String usuarioCreacion;
-    private String fechaModificacion;
+    private LocalDateTime fechaModificacion; // ← CAMBIO: String → LocalDateTime
     private String usuarioModificacion;
 
     /**

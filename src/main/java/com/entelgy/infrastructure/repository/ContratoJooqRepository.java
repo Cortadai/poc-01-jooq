@@ -1,6 +1,7 @@
 package com.entelgy.infrastructure.repository;
 
 import com.entelgy.domain.model.Contrato;
+import com.entelgy.jooq.generated.tables.Contratos;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.DSLContext;
@@ -10,13 +11,12 @@ import org.jooq.impl.DSL;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static org.jooq.impl.DSL.*;
-
 /**
- * Repository JOOQ para Contratos
+ * Repository JOOQ para Contratos - REFACTORIZADO CON CODE GENERATION
  */
 @Slf4j
 @Repository
@@ -24,8 +24,7 @@ import static org.jooq.impl.DSL.*;
 public class ContratoJooqRepository {
 
     private final DSLContext dsl;
-    private static final String TABLE_NAME = "contratos";
-    private static final String SCHEMA = "dbo";
+    private static final Contratos CONTRATOS = Contratos.CONTRATOS;
 
     // ============= LECTURAS (SELECT) =============
 
@@ -37,8 +36,8 @@ public class ContratoJooqRepository {
 
         Record record = dsl
                 .select()
-                .from(table(name(SCHEMA, TABLE_NAME)))
-                .where(field(name(SCHEMA, TABLE_NAME, "id")).eq(id))
+                .from(CONTRATOS)
+                .where(CONTRATOS.ID.eq(Math.toIntExact(id)))
                 .fetchOne();
 
         return record != null ? Optional.of(recordToContrato(record)) : Optional.empty();
@@ -52,9 +51,9 @@ public class ContratoJooqRepository {
 
         Result<Record> records = dsl
                 .select()
-                .from(table(name(SCHEMA, TABLE_NAME)))
-                .where(field(name(SCHEMA, TABLE_NAME, "estado")).eq("VIGENTE"))
-                .orderBy(field(name(SCHEMA, TABLE_NAME, "numero")))
+                .from(CONTRATOS)
+                .where(CONTRATOS.ESTADO.eq("VIGENTE"))
+                .orderBy(CONTRATOS.NUMERO)
                 .fetch();
 
         return records.stream()
@@ -70,9 +69,9 @@ public class ContratoJooqRepository {
 
         Result<Record> records = dsl
                 .select()
-                .from(table(name(SCHEMA, TABLE_NAME)))
-                .where(field(name(SCHEMA, TABLE_NAME, "cliente_id")).eq(clienteId))
-                .orderBy(field(name(SCHEMA, TABLE_NAME, "fecha_inicio")).desc())
+                .from(CONTRATOS)
+                .where(CONTRATOS.CLIENTE_ID.eq(Math.toIntExact(clienteId)))
+                .orderBy(CONTRATOS.FECHA_INICIO.desc())
                 .fetch();
 
         return records.stream()
@@ -82,7 +81,6 @@ public class ContratoJooqRepository {
 
     /**
      * Busca contratos próximos a vencer (próximos 30 días)
-     * Ejemplo de query compleja con múltiples condiciones
      */
     public List<Contrato> findProximosAVencer() {
         log.debug("Buscando contratos próximos a vencer");
@@ -92,13 +90,13 @@ public class ContratoJooqRepository {
 
         Result<Record> records = dsl
                 .select()
-                .from(table(name(SCHEMA, TABLE_NAME)))
+                .from(CONTRATOS)
                 .where(
-                        field(name(SCHEMA, TABLE_NAME, "estado")).eq("VIGENTE")
-                                .and(field(name(SCHEMA, TABLE_NAME, "fecha_fin")).greaterOrEqual(hoy))
-                                .and(field(name(SCHEMA, TABLE_NAME, "fecha_fin")).lessOrEqual(futuro))
+                        CONTRATOS.ESTADO.eq("VIGENTE")
+                                .and(CONTRATOS.FECHA_FIN.greaterOrEqual(hoy))
+                                .and(CONTRATOS.FECHA_FIN.lessOrEqual(futuro))
                 )
-                .orderBy(field(name(SCHEMA, TABLE_NAME, "fecha_fin")).asc())
+                .orderBy(CONTRATOS.FECHA_FIN.asc())
                 .fetch();
 
         return records.stream()
@@ -107,7 +105,7 @@ public class ContratoJooqRepository {
     }
 
     /**
-     * Busca contratos vencidos (fecha_fin < hoy)
+     * Busca contratos vencidos
      */
     public List<Contrato> findVencidos() {
         log.debug("Buscando contratos vencidos");
@@ -116,9 +114,9 @@ public class ContratoJooqRepository {
 
         Result<Record> records = dsl
                 .select()
-                .from(table(name(SCHEMA, TABLE_NAME)))
-                .where(field(name(SCHEMA, TABLE_NAME, "fecha_fin")).lessThan(hoy))
-                .orderBy(field(name(SCHEMA, TABLE_NAME, "fecha_fin")).desc())
+                .from(CONTRATOS)
+                .where(CONTRATOS.FECHA_FIN.lessThan(hoy))
+                .orderBy(CONTRATOS.FECHA_FIN.desc())
                 .fetch();
 
         return records.stream()
@@ -128,12 +126,6 @@ public class ContratoJooqRepository {
 
     /**
      * Búsqueda avanzada con múltiples filtros
-     * Demuestra cómo construir WHERE dinámicos
-     *
-     * @param clienteId ID del cliente (opcional)
-     * @param tipoContrato Tipo de contrato (opcional)
-     * @param estado Estado del contrato (opcional)
-     * @return Lista de contratos que coinciden con los filtros
      */
     public List<Contrato> findByFiltros(Long clienteId, String tipoContrato, String estado) {
         log.debug("Buscando contratos con filtros: clienteId={}, tipo={}, estado={}",
@@ -142,22 +134,22 @@ public class ContratoJooqRepository {
         var condition = DSL.noCondition();
 
         if (clienteId != null) {
-            condition = condition.and(field(name(SCHEMA, TABLE_NAME, "cliente_id")).eq(clienteId));
+            condition = condition.and(CONTRATOS.CLIENTE_ID.eq(Math.toIntExact(clienteId)));
         }
 
         if (tipoContrato != null && !tipoContrato.isEmpty()) {
-            condition = condition.and(field(name(SCHEMA, TABLE_NAME, "tipo_contrato")).eq(tipoContrato));
+            condition = condition.and(CONTRATOS.TIPO_CONTRATO.eq(tipoContrato));
         }
 
         if (estado != null && !estado.isEmpty()) {
-            condition = condition.and(field(name(SCHEMA, TABLE_NAME, "estado")).eq(estado));
+            condition = condition.and(CONTRATOS.ESTADO.eq(estado));
         }
 
         Result<Record> records = dsl
                 .select()
-                .from(table(name(SCHEMA, TABLE_NAME)))
+                .from(CONTRATOS)
                 .where(condition)
-                .orderBy(field(name(SCHEMA, TABLE_NAME, "fecha_inicio")).desc())
+                .orderBy(CONTRATOS.FECHA_INICIO.desc())
                 .fetch();
 
         return records.stream()
@@ -169,57 +161,36 @@ public class ContratoJooqRepository {
 
     /**
      * Inserta nuevo contrato
-     *
-     * Nota: Los campos fecha_creacion y usuario_creacion se establecen
-     * con valores por defecto en la BD (GETDATE() y 'SYSTEM')
      */
     public Contrato save(Contrato contrato) {
         log.debug("Guardando nuevo contrato: {}", contrato.getNumero());
 
         int result = dsl
-                .insertInto(
-                        table(name(SCHEMA, TABLE_NAME)),
-                        field(name(SCHEMA, TABLE_NAME, "numero")),
-                        field(name(SCHEMA, TABLE_NAME, "cliente_id")),
-                        field(name(SCHEMA, TABLE_NAME, "instalacion_id")),
-                        field(name(SCHEMA, TABLE_NAME, "tipo_contrato")),
-                        field(name(SCHEMA, TABLE_NAME, "estado")),
-                        field(name(SCHEMA, TABLE_NAME, "cobertura_material")),
-                        field(name(SCHEMA, TABLE_NAME, "cobertura_mano_obra")),
-                        field(name(SCHEMA, TABLE_NAME, "cobertura_fin_semana")),
-                        field(name(SCHEMA, TABLE_NAME, "fecha_inicio")),
-                        field(name(SCHEMA, TABLE_NAME, "fecha_fin")),
-                        field(name(SCHEMA, TABLE_NAME, "precio_anual")),
-                        field(name(SCHEMA, TABLE_NAME, "porcentaje_central")),
-                        field(name(SCHEMA, TABLE_NAME, "empresa_id")),
-                        field(name(SCHEMA, TABLE_NAME, "usuario_creacion"))
-                )
-                .values(
-                        contrato.getNumero(),
-                        contrato.getClienteId(),
-                        contrato.getInstalacionId(),
-                        contrato.getTipoContrato(),
-                        contrato.getEstado() != null ? contrato.getEstado() : "VIGENTE",
-                        contrato.getCoberturaMaterial() != null ? contrato.getCoberturaMaterial() : true,
-                        contrato.getCoberturaManoObra() != null ? contrato.getCoberturaManoObra() : true,
-                        contrato.getCoberturaFinSemana() != null ? contrato.getCoberturaFinSemana() : false,
-                        contrato.getFechaInicio(),
-                        contrato.getFechaFin(),
-                        contrato.getPrecioAnual(),
-                        contrato.getPorcentajeCentral() != null ? contrato.getPorcentajeCentral() : 70,
-                        contrato.getEmpresaId() != null ? contrato.getEmpresaId() : 1,
-                        "SYSTEM"
-                )
+                .insertInto(CONTRATOS)
+                .set(CONTRATOS.NUMERO, contrato.getNumero())
+                .set(CONTRATOS.CLIENTE_ID, contrato.getClienteId())
+                .set(CONTRATOS.INSTALACION_ID, contrato.getInstalacionId())
+                .set(CONTRATOS.TIPO_CONTRATO, contrato.getTipoContrato())
+                .set(CONTRATOS.ESTADO, contrato.getEstado() != null ? contrato.getEstado() : "VIGENTE")
+                .set(CONTRATOS.COBERTURA_MATERIAL, contrato.getCoberturaMaterial() != null ? contrato.getCoberturaMaterial() : true)
+                .set(CONTRATOS.COBERTURA_MANO_OBRA, contrato.getCoberturaManoObra() != null ? contrato.getCoberturaManoObra() : true)
+                .set(CONTRATOS.COBERTURA_FIN_SEMANA, contrato.getCoberturaFinSemana() != null ? contrato.getCoberturaFinSemana() : false)
+                .set(CONTRATOS.FECHA_INICIO, contrato.getFechaInicio())
+                .set(CONTRATOS.FECHA_FIN, contrato.getFechaFin())
+                .set(CONTRATOS.PRECIO_ANUAL, contrato.getPrecioAnual())
+                .set(CONTRATOS.PORCENTAJE_CENTRAL, contrato.getPorcentajeCentral() != null ? contrato.getPorcentajeCentral() : 70)
+                .set(CONTRATOS.EMPRESA_ID, contrato.getEmpresaId() != null ? contrato.getEmpresaId() : 1)
+                .set(CONTRATOS.USUARIO_CREACION, "SYSTEM")
                 .execute();
 
         if (result > 0) {
             log.debug("Contrato guardado exitosamente");
 
-            // Recuperar el contrato inserado por su número
+            // Recuperar contrato insertado
             Record record = dsl
                     .select()
-                    .from(table(name(SCHEMA, TABLE_NAME)))
-                    .where(field(name(SCHEMA, TABLE_NAME, "numero")).eq(contrato.getNumero()))
+                    .from(CONTRATOS)
+                    .where(CONTRATOS.NUMERO.eq(contrato.getNumero()))
                     .fetchOne();
 
             if (record != null) {
@@ -232,18 +203,16 @@ public class ContratoJooqRepository {
 
     /**
      * Actualiza un contrato existente
-     *
-     * Actualiza: estado, fecha_modificacion, usuario_modificacion
      */
     public Contrato update(Contrato contrato) {
         log.debug("Actualizando contrato: {}", contrato.getId());
 
         int result = dsl
-                .update(table(name(SCHEMA, TABLE_NAME)))
-                .set(field(name(SCHEMA, TABLE_NAME, "estado")), contrato.getEstado())
-                .set(field(name(SCHEMA, TABLE_NAME, "fecha_modificacion")), now())
-                .set(field(name(SCHEMA, TABLE_NAME, "usuario_modificacion")), "SYSTEM")
-                .where(field(name(SCHEMA, TABLE_NAME, "id")).eq(contrato.getId()))
+                .update(CONTRATOS)
+                .set(CONTRATOS.ESTADO, contrato.getEstado())
+                .set(CONTRATOS.FECHA_MODIFICACION, LocalDateTime.now())
+                .set(CONTRATOS.USUARIO_MODIFICACION, "SYSTEM")
+                .where(CONTRATOS.ID.eq(contrato.getId()))
                 .execute();
 
         if (result > 0) {
@@ -257,30 +226,27 @@ public class ContratoJooqRepository {
 
     /**
      * Convierte un Record de JOOQ a objeto Contrato
-     *
-     * Esta es la "columna vertebral" del mapping manual.
-     * Mapea cada columna de la BD a su correspondiente propiedad en la entidad.
      */
     private Contrato recordToContrato(Record record) {
         return Contrato.builder()
-                .id(record.get("id", Long.class))
-                .numero(record.get("numero", String.class))
-                .clienteId(record.get("cliente_id", Long.class))
-                .instalacionId(record.get("instalacion_id", Long.class))
-                .tipoContrato(record.get("tipo_contrato", String.class))
-                .estado(record.get("estado", String.class))
-                .coberturaMaterial(record.get("cobertura_material", Boolean.class))
-                .coberturaManoObra(record.get("cobertura_mano_obra", Boolean.class))
-                .coberturaFinSemana(record.get("cobertura_fin_semana", Boolean.class))
-                .fechaInicio(record.get("fecha_inicio", LocalDate.class))
-                .fechaFin(record.get("fecha_fin", LocalDate.class))
-                .precioAnual(record.get("precio_anual", java.math.BigDecimal.class))
-                .porcentajeCentral(record.get("porcentaje_central", Integer.class))
-                .empresaId(record.get("empresa_id", Integer.class))
-                .fechaCreacion(record.get("fecha_creacion", String.class))
-                .usuarioCreacion(record.get("usuario_creacion", String.class))
-                .fechaModificacion(record.get("fecha_modificacion", String.class))
-                .usuarioModificacion(record.get("usuario_modificacion", String.class))
+                .id(record.get(CONTRATOS.ID))
+                .numero(record.get(CONTRATOS.NUMERO))
+                .clienteId(record.get(CONTRATOS.CLIENTE_ID))
+                .instalacionId(record.get(CONTRATOS.INSTALACION_ID))
+                .tipoContrato(record.get(CONTRATOS.TIPO_CONTRATO))
+                .estado(record.get(CONTRATOS.ESTADO))
+                .coberturaMaterial(record.get(CONTRATOS.COBERTURA_MATERIAL))
+                .coberturaManoObra(record.get(CONTRATOS.COBERTURA_MANO_OBRA))
+                .coberturaFinSemana(record.get(CONTRATOS.COBERTURA_FIN_SEMANA))
+                .fechaInicio(record.get(CONTRATOS.FECHA_INICIO))
+                .fechaFin(record.get(CONTRATOS.FECHA_FIN))
+                .precioAnual(record.get(CONTRATOS.PRECIO_ANUAL))
+                .porcentajeCentral(record.get(CONTRATOS.PORCENTAJE_CENTRAL))
+                .empresaId(record.get(CONTRATOS.EMPRESA_ID))
+                .fechaCreacion(record.get(CONTRATOS.FECHA_CREACION))
+                .usuarioCreacion(record.get(CONTRATOS.USUARIO_CREACION))
+                .fechaModificacion(record.get(CONTRATOS.FECHA_MODIFICACION))
+                .usuarioModificacion(record.get(CONTRATOS.USUARIO_MODIFICACION))
                 .build();
     }
 }

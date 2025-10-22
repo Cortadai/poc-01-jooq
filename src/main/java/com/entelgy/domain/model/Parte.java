@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -11,27 +13,18 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class Parte {
-    private Long id;
-    private String numeroParte;
-    private Long contratoId;
-    private Long clienteId;
-    private Long instalacionId;
-    private String tipoParte; // AVERIA, REVISION, INSTALACION, MANTENIMIENTO
-    private String estado; // ABIERTO, CERRADO, CANCELADO
+    private Integer id;                  // ← CAMBIO: Long → Integer
+    private String numero;
+    private Integer contratoId;          // ← CAMBIO: Long → Integer
+    private LocalDateTime fechaInicio;
+    private LocalDateTime fechaFin;
     private String descripcion;
-    private LocalDateTime horaInicio;
-    private LocalDateTime horaFin;
-    private Long tecnicoId;
-    private String fechaCreacion;
+    private String tipoTrabajo;
+    private String estado;
+    private BigDecimal horasTrabajadas;
+    private Integer empresaId;
+    private LocalDateTime fechaCreacion; // ← CAMBIO: String → LocalDateTime
     private String usuarioCreacion;
-
-    /**
-     * Calcula duración en minutos
-     */
-    public Long duracionMinutos() {
-        if (horaInicio != null && horaFin != null) {
-            return java.time.temporal.ChronoUnit.MINUTES.between(horaInicio, horaFin);
-        }
-        return null;
-    }
+    private LocalDateTime fechaModificacion; // ← CAMBIO: String → LocalDateTime
+    private String usuarioModificacion;
 }

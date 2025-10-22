@@ -31,7 +31,11 @@ logging:
   level:
     root: INFO
     com.entelgy: DEBUG
+    org.jooq: DEBUG
     org.jooq.tools.LoggerListener: DEBUG
+    org.springframework.web.servlet.resource: WARN
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
   pattern:
     console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
 

@@ -5,20 +5,18 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Cliente {
-    private Long id;
+    private Integer id;                  // ← CAMBIO: Long → Integer
     private String nombre;
     private String email;
     private String telefono;
     private Integer empresaId;
-    private Integer delegacionId;
-    private String estado; // ACTIVO, INACTIVO
-    private String fechaCreacion;
+    private LocalDateTime fechaCreacion; // ← CAMBIO: String → LocalDateTime
     private String usuarioCreacion;
-    private String fechaModificacion;
-    private String usuarioModificacion;
 }

@@ -1,22 +1,19 @@
 package com.entelgy.infrastructure.repository;
 
 import com.entelgy.domain.model.Parte;
+import com.entelgy.jooq.generated.tables.Partes;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Result;
-import org.jooq.impl.DSL;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static org.jooq.impl.DSL.*;
-
 /**
- * Repository JOOQ para Partes (intervenciones técnicas)
+ * Repository JOOQ para Partes - REFACTORIZADO CON CODE GENERATION
  */
 @Slf4j
 @Repository
@@ -24,10 +21,7 @@ import static org.jooq.impl.DSL.*;
 public class ParteJooqRepository {
 
     private final DSLContext dsl;
-    private static final String TABLE_NAME = "partes";
-    private static final String SCHEMA = "dbo";
-
-    // ============= LECTURAS (SELECT) =============
+    private static final Partes PARTES = Partes.PARTES;
 
     /**
      * Obtiene parte por ID
@@ -37,217 +31,78 @@ public class ParteJooqRepository {
 
         Record record = dsl
                 .select()
-                .from(table(name(SCHEMA, TABLE_NAME)))
-                .where(field(name(SCHEMA, TABLE_NAME, "id")).eq(id))
+                .from(PARTES)
+                .where(PARTES.ID.eq(Math.toIntExact(id)))
                 .fetchOne();
 
-        return record != null ? Optional.of(recordToParte(record)) : Optional.empty();
+        return record != null ? Optional.of(recordToPartes(record)) : Optional.empty();
     }
 
     /**
-     * Obtiene todos los partes abiertos
-     */
-    public List<Parte> findAllAbiertos() {
-        log.debug("Obteniendo todos los partes abiertos");
-
-        Result<Record> records = dsl
-                .select()
-                .from(table(name(SCHEMA, TABLE_NAME)))
-                .where(field(name(SCHEMA, TABLE_NAME, "estado")).eq("ABIERTO"))
-                .orderBy(field(name(SCHEMA, TABLE_NAME, "numero_parte")).desc())
-                .fetch();
-
-        return records.stream()
-                .map(this::recordToParte)
-                .toList();
-    }
-
-    /**
-     * Obtiene partes abiertos para un cliente
-     */
-    public List<Parte> findAbiertosByClienteId(Long clienteId) {
-        log.debug("Buscando partes abiertos para cliente: {}", clienteId);
-
-        Result<Record> records = dsl
-                .select()
-                .from(table(name(SCHEMA, TABLE_NAME)))
-                .where(field(name(SCHEMA, TABLE_NAME, "cliente_id")).eq(clienteId))
-                .and(field(name(SCHEMA, TABLE_NAME, "estado")).eq("ABIERTO"))
-                .orderBy(field(name(SCHEMA, TABLE_NAME, "numero_parte")).desc())
-                .fetch();
-
-        return records.stream()
-                .map(this::recordToParte)
-                .toList();
-    }
-
-    /**
-     * Obtiene partes por contrato
+     * Busca partes por contrato
      */
     public List<Parte> findByContratoId(Long contratoId) {
         log.debug("Buscando partes para contrato: {}", contratoId);
 
         Result<Record> records = dsl
                 .select()
-                .from(table(name(SCHEMA, TABLE_NAME)))
-                .where(field(name(SCHEMA, TABLE_NAME, "contrato_id")).eq(contratoId))
-                .orderBy(field(name(SCHEMA, TABLE_NAME, "fecha_creacion")).desc())
+                .from(PARTES)
+                .where(PARTES.CONTRATO_ID.eq(Math.toIntExact(contratoId)))
+                .orderBy(PARTES.FECHA_INICIO.desc())
                 .fetch();
 
         return records.stream()
-                .map(this::recordToParte)
+                .map(this::recordToPartes)
                 .toList();
     }
 
     /**
-     * Obtiene partes asignados a un técnico
+     * Busca partes abiertos (sin cerrar)
      */
-    public List<Parte> findByTecnicoId(Long tecnicoId) {
-        log.debug("Buscando partes para técnico: {}", tecnicoId);
+    public List<Parte> findAbiertos() {
+        log.debug("Obteniendo partes abiertos");
 
         Result<Record> records = dsl
                 .select()
-                .from(table(name(SCHEMA, TABLE_NAME)))
-                .where(field(name(SCHEMA, TABLE_NAME, "tecnico_id")).eq(tecnicoId))
-                .and(field(name(SCHEMA, TABLE_NAME, "estado")).eq("ABIERTO"))
-                .orderBy(field(name(SCHEMA, TABLE_NAME, "numero_parte")).desc())
+                .from(PARTES)
+                .where(PARTES.ESTADO.eq("ABIERTO"))
+                .orderBy(PARTES.FECHA_INICIO.desc())
                 .fetch();
 
         return records.stream()
-                .map(this::recordToParte)
+                .map(this::recordToPartes)
                 .toList();
     }
 
     /**
-     * Obtiene todos los partes abiertos de mantenimiento
-     */
-    public List<Parte> findAllMantenimientosAbiertos() {
-        log.debug("Obteniendo todos los partes abiertos en mantenimiento");
-
-        Result<Record> records = dsl
-                .select()
-                .from(table(name(SCHEMA, TABLE_NAME)))
-                .where(field(name(SCHEMA, TABLE_NAME, "estado")).eq("ABIERTO"))
-                .and(field(name(SCHEMA, TABLE_NAME, "tipo_parte")).eq("MANTENIMIENTO"))
-                .orderBy(field(name(SCHEMA, TABLE_NAME, "numero_parte")).desc())
-                .fetch();
-
-        return records.stream()
-                .map(this::recordToParte)
-                .toList();
-    }
-
-    /**
-     * Obtiene partes cerrados
-     */
-    public List<Parte> findCerrados() {
-        log.debug("Obteniendo todos los partes cerrados");
-
-        Result<Record> records = dsl
-                .select()
-                .from(table(name(SCHEMA, TABLE_NAME)))
-                .where(field(name(SCHEMA, TABLE_NAME, "estado")).eq("CERRADO"))
-                .orderBy(field(name(SCHEMA, TABLE_NAME, "fecha_creacion")).desc())
-                .fetch();
-
-        return records.stream()
-                .map(this::recordToParte)
-                .toList();
-    }
-
-    /**
-     * Búsqueda avanzada con múltiples filtros
-     */
-    public List<Parte> findByFiltros(Long clienteId, String estado, String tipoParte, Long tecnicoId) {
-        log.debug("Buscando partes con filtros: cliente={}, estado={}, tipo={}, tecnico={}",
-                clienteId, estado, tipoParte, tecnicoId);
-
-        var condition = DSL.noCondition();
-
-        if (clienteId != null) {
-            condition = condition.and(
-                    field(name(SCHEMA, TABLE_NAME, "cliente_id")).eq(clienteId)
-            );
-        }
-
-        if (estado != null && !estado.isEmpty()) {
-            condition = condition.and(
-                    field(name(SCHEMA, TABLE_NAME, "estado")).eq(estado)
-            );
-        }
-
-        if (tipoParte != null && !tipoParte.isEmpty()) {
-            condition = condition.and(
-                    field(name(SCHEMA, TABLE_NAME, "tipo_parte")).eq(tipoParte)
-            );
-        }
-
-        if (tecnicoId != null) {
-            condition = condition.and(
-                    field(name(SCHEMA, TABLE_NAME, "tecnico_id")).eq(tecnicoId)
-            );
-        }
-
-        Result<Record> records = dsl
-                .select()
-                .from(table(name(SCHEMA, TABLE_NAME)))
-                .where(condition)
-                .orderBy(field(name(SCHEMA, TABLE_NAME, "fecha_creacion")).desc())
-                .fetch();
-
-        return records.stream()
-                .map(this::recordToParte)
-                .toList();
-    }
-
-    // ============= ESCRITURAS (INSERT, UPDATE) =============
-
-    /**
-     * Inserta nuevo parte
+     * Guarda nuevo parte
      */
     public Parte save(Parte parte) {
-        log.debug("Guardando nuevo parte: {}", parte.getNumeroParte());
+        log.debug("Guardando nuevo parte: {}", parte.getNumero());
 
         int result = dsl
-                .insertInto(
-                        table(name(SCHEMA, TABLE_NAME)),
-                        field(name(SCHEMA, TABLE_NAME, "numero_parte")),
-                        field(name(SCHEMA, TABLE_NAME, "contrato_id")),
-                        field(name(SCHEMA, TABLE_NAME, "cliente_id")),
-                        field(name(SCHEMA, TABLE_NAME, "instalacion_id")),
-                        field(name(SCHEMA, TABLE_NAME, "tipo_parte")),
-                        field(name(SCHEMA, TABLE_NAME, "estado")),
-                        field(name(SCHEMA, TABLE_NAME, "descripcion")),
-                        field(name(SCHEMA, TABLE_NAME, "hora_inicio")),
-                        field(name(SCHEMA, TABLE_NAME, "tecnico_id")),
-                        field(name(SCHEMA, TABLE_NAME, "usuario_creacion"))
-                )
-                .values(
-                        parte.getNumeroParte(),
-                        parte.getContratoId(),
-                        parte.getClienteId(),
-                        parte.getInstalacionId(),
-                        parte.getTipoParte(),
-                        parte.getEstado() != null ? parte.getEstado() : "ABIERTO",
-                        parte.getDescripcion(),
-                        parte.getHoraInicio() != null ? parte.getHoraInicio() : LocalDateTime.now(),
-                        parte.getTecnicoId(),
-                        "SYSTEM"
-                )
+                .insertInto(PARTES)
+                .set(PARTES.NUMERO, parte.getNumero())
+                .set(PARTES.CONTRATO_ID, parte.getContratoId())
+                .set(PARTES.FECHA_INICIO, parte.getFechaInicio())
+                .set(PARTES.FECHA_FIN, parte.getFechaFin())
+                .set(PARTES.DESCRIPCION, parte.getDescripcion())
+                .set(PARTES.TIPO_TRABAJO, parte.getTipoTrabajo())
+                .set(PARTES.ESTADO, parte.getEstado() != null ? parte.getEstado() : "ABIERTO")
+                .set(PARTES.HORAS_TRABAJADAS, parte.getHorasTrabajadas())
+                .set(PARTES.USUARIO_CREACION, "SYSTEM")
                 .execute();
 
         if (result > 0) {
             log.debug("Parte guardado exitosamente");
 
-            // Recuperar el parte insertado por número
             Record record = dsl
-                    .select()
-                    .from(table(name(SCHEMA, TABLE_NAME)))
-                    .where(field(name(SCHEMA, TABLE_NAME, "numero_parte")).eq(parte.getNumeroParte()))
+                    .selectFrom(PARTES)
+                    .where(PARTES.NUMERO.eq(parte.getNumero()))
                     .fetchOne();
 
             if (record != null) {
-                return recordToParte(record);
+                return recordToPartes(record);
             }
         }
 
@@ -255,46 +110,41 @@ public class ParteJooqRepository {
     }
 
     /**
-     * Actualiza un parte existente
+     * Actualiza parte
      */
     public Parte update(Parte parte) {
         log.debug("Actualizando parte: {}", parte.getId());
 
-        int result = dsl
-                .update(table(name(SCHEMA, TABLE_NAME)))
-                .set(field(name(SCHEMA, TABLE_NAME, "estado")), parte.getEstado())
-                .set(field(name(SCHEMA, TABLE_NAME, "hora_fin")), parte.getHoraFin())
-                .set(field(name(SCHEMA, TABLE_NAME, "tecnico_id")), parte.getTecnicoId())
-                .where(field(name(SCHEMA, TABLE_NAME, "id")).eq(parte.getId()))
+        dsl
+                .update(PARTES)
+                .set(PARTES.ESTADO, parte.getEstado())
+                .set(PARTES.FECHA_FIN, parte.getFechaFin())
+                .set(PARTES.USUARIO_MODIFICACION, "SYSTEM")
+                .where(PARTES.ID.eq(parte.getId()))
                 .execute();
-
-        if (result > 0) {
-            log.debug("Parte actualizado exitosamente");
-        }
 
         return parte;
     }
 
-    // ============= UTILIDADES =============
-
     /**
-     * Convierte un Record de JOOQ a objeto Parte
+     * Convierte Record a Parte
      */
-    private Parte recordToParte(Record record) {
+    private Parte recordToPartes(Record record) {
         return Parte.builder()
-                .id(record.get("id", Long.class))
-                .numeroParte(record.get("numero_parte", String.class))
-                .contratoId(record.get("contrato_id", Long.class))
-                .clienteId(record.get("cliente_id", Long.class))
-                .instalacionId(record.get("instalacion_id", Long.class))
-                .tipoParte(record.get("tipo_parte", String.class))
-                .estado(record.get("estado", String.class))
-                .descripcion(record.get("descripcion", String.class))
-                .horaInicio(record.get("hora_inicio", LocalDateTime.class))
-                .horaFin(record.get("hora_fin", LocalDateTime.class))
-                .tecnicoId(record.get("tecnico_id", Long.class))
-                .fechaCreacion(record.get("fecha_creacion", String.class))
-                .usuarioCreacion(record.get("usuario_creacion", String.class))
+                .id(record.get(PARTES.ID))
+                .numero(record.get(PARTES.NUMERO))
+                .contratoId(record.get(PARTES.CONTRATO_ID))
+                .fechaInicio(record.get(PARTES.FECHA_INICIO))
+                .fechaFin(record.get(PARTES.FECHA_FIN))
+                .descripcion(record.get(PARTES.DESCRIPCION))
+                .tipoTrabajo(record.get(PARTES.TIPO_TRABAJO))
+                .estado(record.get(PARTES.ESTADO))
+                .horasTrabajadas(record.get(PARTES.HORAS_TRABAJADAS))
+                .empresaId(record.get(PARTES.EMPRESA_ID))
+                .fechaCreacion(record.get(PARTES.FECHA_CREACION))
+                .usuarioCreacion(record.get(PARTES.USUARIO_CREACION))
+                .fechaModificacion(record.get(PARTES.FECHA_MODIFICACION))
+                .usuarioModificacion(record.get(PARTES.USUARIO_MODIFICACION))
                 .build();
     }
 }
