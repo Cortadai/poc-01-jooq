@@ -46,7 +46,6 @@ import static org.mockito.Mockito.*;
  * 7. Edge cases y errores
  */
 @ExtendWith(MockitoExtension.class)
-@DisplayName("JoinExamplesApplicationService - Tests Unitarios Completos")
 class JoinExamplesApplicationServiceTest {
 
     @Mock

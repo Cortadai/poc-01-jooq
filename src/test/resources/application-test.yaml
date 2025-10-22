@@ -26,7 +26,7 @@ spring:
       mode: never
 
   flyway:
-    locations: classpath:db/migration
+    locations: classpath:test/db/migration
     baseline-on-migrate: true
     table: flyway_schema_history
 
