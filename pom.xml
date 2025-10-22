@@ -13,8 +13,8 @@
     <groupId>com.entelgy</groupId>
     <artifactId>poc-01-jooq</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>POC 1 - JOOQ + SQL Server</name>
-    <description>POC de JOOQ con SQL Server</description>
+    <name>POC 1 - JOOQ + PostgreSQL</name>
+    <description>POC de JOOQ con PostgreSQL - Code Generation Enabled</description>
 
     <properties>
         <java.version>21</java.version>
@@ -35,6 +35,7 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
+
         <!-- JOOQ -->
         <dependency>
             <groupId>org.jooq</groupId>
@@ -51,38 +52,45 @@
             <artifactId>jooq-codegen</artifactId>
             <version>${jooq.version}</version>
         </dependency>
-        <!-- SQL Server -->
+
+        <!-- PostgreSQL Driver -->
         <dependency>
-            <groupId>com.microsoft.sqlserver</groupId>
-            <artifactId>mssql-jdbc</artifactId>
-            <version>12.4.2.jre11</version>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.7.1</version>
         </dependency>
+
         <!-- Spring Data JPA (para transacciones) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
+
         <!-- Flyway para migraciones -->
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
         </dependency>
+        <!-- Flyway PostgreSQL Support -->
         <dependency>
             <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-sqlserver</artifactId>
+            <artifactId>flyway-database-postgresql</artifactId>
         </dependency>
+
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
+
         <!-- MapStruct -->
         <dependency>
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
             <version>1.5.5.Final</version>
         </dependency>
+
         <!-- Testing -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -97,7 +105,7 @@
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
-            <artifactId>mssqlserver</artifactId>
+            <artifactId>postgresql</artifactId>
             <version>1.19.7</version>
             <scope>test</scope>
         </dependency>
@@ -117,11 +125,13 @@
                     </excludes>
                 </configuration>
             </plugin>
-            <!-- JOOQ Code Generation -->
+
+            <!-- JOOQ Code Generation - ACTIVO PARA POSTGRESQL -->
 <!--            <plugin>-->
 <!--                <groupId>org.jooq</groupId>-->
 <!--                <artifactId>jooq-codegen-maven</artifactId>-->
 <!--                <version>${jooq.version}</version>-->
+
 <!--                <executions>-->
 <!--                    <execution>-->
 <!--                        <goals>-->
@@ -129,27 +139,35 @@
 <!--                        </goals>-->
 <!--                    </execution>-->
 <!--                </executions>-->
+
 <!--                <dependencies>-->
 <!--                    <dependency>-->
-<!--                        <groupId>com.microsoft.sqlserver</groupId>-->
-<!--                        <artifactId>mssql-jdbc</artifactId>-->
-<!--                        <version>12.4.2.jre11</version>-->
+<!--                        <groupId>org.postgresql</groupId>-->
+<!--                        <artifactId>postgresql</artifactId>-->
+<!--                        <version>42.7.1</version>-->
 <!--                    </dependency>-->
 <!--                </dependencies>-->
+
 <!--                <configuration>-->
 <!--                    <jdbc>-->
-<!--                        <driver>com.microsoft.sqlserver.jdbc.SQLServerDriver</driver>-->
-<!--                        <url>jdbc:sqlserver://localhost:1433;databaseName=entelgy_poc</url>-->
-<!--                        <user>sa</user>-->
-<!--                        <password>YourStrong!Passw0rd</password>-->
+<!--                        <driver>org.postgresql.Driver</driver>-->
+<!--                        <url>jdbc:postgresql://localhost:5432/entelgy_poc</url>-->
+<!--                        <user>postgres</user>-->
+<!--                        <password>postgres</password>-->
 <!--                    </jdbc>-->
+
 <!--                    <generator>-->
 <!--                        <database>-->
-<!--                            <name>org.jooq.meta.sqlserver.SQLServerDatabase</name>-->
+<!--                            <name>org.jooq.meta.postgres.PostgresDatabase</name>-->
 <!--                            <includes>.*</includes>-->
-<!--                            <excludes>dbo\.INFORMATION_SCHEMA\..*</excludes>-->
-<!--                            <inputSchema>dbo</inputSchema>-->
+<!--                            <excludes>pg_catalog\..*|information_schema\..*</excludes>-->
+<!--                            <inputSchema>public</inputSchema>-->
 <!--                        </database>-->
+
+<!--                        <generate>-->
+<!--                            <records>true</records>-->
+<!--                        </generate>-->
+
 <!--                        <target>-->
 <!--                            <packageName>com.entelgy.jooq.generated</packageName>-->
 <!--                            <directory>src/main/java</directory>-->
@@ -157,6 +175,7 @@
 <!--                    </generator>-->
 <!--                </configuration>-->
 <!--            </plugin>-->
+
             <!-- Mapstruct -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

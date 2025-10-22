@@ -1,125 +1,154 @@
--- POC 1: JOOQ + SQL Server
--- Flyway Migration: V1__Initial_Schema.sql
+-- ===================================================================
+-- SCHEMA INICIAL PARA POC-01-JOOQ CON POSTGRESQL
+-- ===================================================================
+-- Nota: Flyway ejecutará este script automáticamente al iniciar la app
 
--- Tabla de Clientes
-CREATE TABLE clientes (
-                          id BIGINT PRIMARY KEY IDENTITY(1,1),
-                          nombre NVARCHAR(255) NOT NULL,
-                          email NVARCHAR(255),
-                          telefono NVARCHAR(20),
-                          empresa_id INT NOT NULL DEFAULT 1,
-                          delegacion_id INT NOT NULL DEFAULT 1,
-                          estado NVARCHAR(50) NOT NULL DEFAULT 'ACTIVO', -- ACTIVO, INACTIVO
-                          fecha_creacion DATETIME NOT NULL DEFAULT GETDATE(),
-                          usuario_creacion NVARCHAR(100) NOT NULL DEFAULT 'SYSTEM',
-                          fecha_modificacion DATETIME,
-                          usuario_modificacion NVARCHAR(100),
-                          CONSTRAINT uk_clientes_email UNIQUE (email)
-);
+-- ===================================================================
+-- TABLA: CLIENTES
+-- ===================================================================
+CREATE TABLE IF NOT EXISTS clientes (
+                                        id SERIAL PRIMARY KEY,
+                                        nombre VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE,
+    telefono VARCHAR(20),
+    empresa_id INTEGER DEFAULT 1,
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    usuario_creacion VARCHAR(50) DEFAULT 'SYSTEM'
+    );
 
--- Tabla de Instalaciones (vinculadas a clientes)
-CREATE TABLE instalaciones (
-                               id BIGINT PRIMARY KEY IDENTITY(1,1),
-                               cliente_id BIGINT NOT NULL,
-                               codigo NVARCHAR(100) NOT NULL,
-                               descripcion NVARCHAR(255),
-                               direccion NVARCHAR(500),
-                               codigo_postal NVARCHAR(10),
-                               zona NVARCHAR(50),
-                               estado NVARCHAR(50) NOT NULL DEFAULT 'ACTIVO',
-                               fecha_creacion DATETIME NOT NULL DEFAULT GETDATE(),
-                               usuario_creacion NVARCHAR(100) NOT NULL DEFAULT 'SYSTEM',
-                               CONSTRAINT fk_instalaciones_cliente FOREIGN KEY (cliente_id) REFERENCES clientes(id),
-                               CONSTRAINT uk_instalaciones_codigo UNIQUE (codigo)
-);
+COMMENT ON TABLE clientes IS 'Tabla de clientes del sistema';
+COMMENT ON COLUMN clientes.id IS 'Identificador único del cliente';
+COMMENT ON COLUMN clientes.nombre IS 'Nombre del cliente';
+COMMENT ON COLUMN clientes.email IS 'Email del cliente';
+COMMENT ON COLUMN clientes.telefono IS 'Teléfono de contacto';
 
--- Tabla de Contratos
-CREATE TABLE contratos (
-                           id BIGINT PRIMARY KEY IDENTITY(1,1),
-                           numero NVARCHAR(100) NOT NULL,
-                           cliente_id BIGINT NOT NULL,
-                           instalacion_id BIGINT NOT NULL,
-                           tipo_contrato NVARCHAR(50) NOT NULL, -- MANTENIMIENTO, REPARACION, REVISION
-                           estado NVARCHAR(50) NOT NULL DEFAULT 'VIGENTE', -- VIGENTE, VENCIDO, CANCELADO, RENOVADO
-                           cobertura_material BIT NOT NULL DEFAULT 1,
-                           cobertura_mano_obra BIT NOT NULL DEFAULT 1,
-                           cobertura_fin_semana BIT NOT NULL DEFAULT 0,
-                           fecha_inicio DATE NOT NULL,
-                           fecha_fin DATE NOT NULL,
-                           precio_anual DECIMAL(10, 2) NOT NULL,
-                           porcentaje_central INT NOT NULL DEFAULT 70,
-                           empresa_id INT NOT NULL DEFAULT 1,
-                           fecha_creacion DATETIME NOT NULL DEFAULT GETDATE(),
-                           usuario_creacion NVARCHAR(100) NOT NULL DEFAULT 'SYSTEM',
-                           fecha_modificacion DATETIME,
-                           usuario_modificacion NVARCHAR(100),
-                           CONSTRAINT fk_contratos_cliente FOREIGN KEY (cliente_id) REFERENCES clientes(id),
-                           CONSTRAINT fk_contratos_instalacion FOREIGN KEY (instalacion_id) REFERENCES instalaciones(id),
-                           CONSTRAINT uk_contratos_numero UNIQUE (numero)
-);
+-- ===================================================================
+-- TABLA: INSTALACIONES
+-- ===================================================================
+CREATE TABLE IF NOT EXISTS instalaciones (
+                                             id SERIAL PRIMARY KEY,
+                                             ubicacion VARCHAR(255) NOT NULL,
+    tipo VARCHAR(100),
+    descripcion TEXT,
+    empresa_id INTEGER DEFAULT 1,
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    usuario_creacion VARCHAR(50) DEFAULT 'SYSTEM'
+    );
 
--- Tabla de Historial de Contratos (auditoría)
-CREATE TABLE contratos_historico (
-                                     id BIGINT PRIMARY KEY IDENTITY(1,1),
-                                     contrato_id BIGINT NOT NULL,
-                                     accion NVARCHAR(50), -- CREADO, MODIFICADO, RENOVADO, CANCELADO
-                                     estado_anterior NVARCHAR(50),
-                                     estado_nuevo NVARCHAR(50),
-                                     usuario NVARCHAR(100),
-                                     fecha DATETIME DEFAULT GETDATE(),
-                                     descripcion NVARCHAR(1000),
-                                     CONSTRAINT fk_historico_contrato FOREIGN KEY (contrato_id) REFERENCES contratos(id)
-);
+COMMENT ON TABLE instalaciones IS 'Tabla de instalaciones de clientes';
+COMMENT ON COLUMN instalaciones.id IS 'Identificador único de la instalación';
+COMMENT ON COLUMN instalaciones.ubicacion IS 'Ubicación geográfica de la instalación';
+COMMENT ON COLUMN instalaciones.tipo IS 'Tipo de instalación (Oficina, Almacén, Planta, etc)';
 
--- Tabla de Partes (intervenciones técnicas)
-CREATE TABLE partes (
-                        id BIGINT PRIMARY KEY IDENTITY(1,1),
-                        numero_parte NVARCHAR(100) NOT NULL,
-                        contrato_id BIGINT NOT NULL,
-                        cliente_id BIGINT NOT NULL,
-                        instalacion_id BIGINT NOT NULL,
-                        tipo_parte NVARCHAR(50) NOT NULL, -- AVERIA, REVISION, INSTALACION, MANTENIMIENTO
-                        estado NVARCHAR(50) NOT NULL DEFAULT 'ABIERTO', -- ABIERTO, CERRADO, CANCELADO
-                        descripcion NVARCHAR(1000),
-                        hora_inicio DATETIME,
-                        hora_fin DATETIME,
-                        tecnico_id BIGINT,
-                        fecha_creacion DATETIME NOT NULL DEFAULT GETDATE(),
-                        usuario_creacion NVARCHAR(100) NOT NULL DEFAULT 'SYSTEM',
-                        CONSTRAINT fk_partes_contrato FOREIGN KEY (contrato_id) REFERENCES contratos(id),
-                        CONSTRAINT fk_partes_cliente FOREIGN KEY (cliente_id) REFERENCES clientes(id),
-                        CONSTRAINT fk_partes_instalacion FOREIGN KEY (instalacion_id) REFERENCES instalaciones(id),
-                        CONSTRAINT uk_partes_numero UNIQUE (numero_parte)
-);
+-- ===================================================================
+-- TABLA: CONTRATOS (Principal)
+-- ===================================================================
+CREATE TABLE IF NOT EXISTS contratos (
+                                         id SERIAL PRIMARY KEY,
+                                         numero VARCHAR(50) UNIQUE NOT NULL,
+    cliente_id INTEGER NOT NULL REFERENCES clientes(id) ON DELETE CASCADE,
+    instalacion_id INTEGER REFERENCES instalaciones(id) ON DELETE SET NULL,
+    tipo_contrato VARCHAR(50) NOT NULL,
+    estado VARCHAR(20) DEFAULT 'VIGENTE' CHECK (estado IN ('VIGENTE', 'VENCIDO', 'CANCELADO', 'SUSPENDIDO')),
+    cobertura_material BOOLEAN DEFAULT true,
+    cobertura_mano_obra BOOLEAN DEFAULT true,
+    cobertura_fin_semana BOOLEAN DEFAULT false,
+    fecha_inicio DATE NOT NULL,
+    fecha_fin DATE NOT NULL,
+    precio_anual NUMERIC(12, 2) NOT NULL,
+    porcentaje_central INTEGER DEFAULT 70,
+    empresa_id INTEGER DEFAULT 1,
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    usuario_creacion VARCHAR(50) DEFAULT 'SYSTEM',
+    fecha_modificacion TIMESTAMP,
+    usuario_modificacion VARCHAR(50),
+    CONSTRAINT fk_cliente FOREIGN KEY (cliente_id) REFERENCES clientes(id) ON DELETE CASCADE,
+    CONSTRAINT fk_instalacion FOREIGN KEY (instalacion_id) REFERENCES instalaciones(id) ON DELETE SET NULL
+    );
 
--- Índices para queries comunes
-CREATE INDEX idx_clientes_empresa ON clientes(empresa_id);
-CREATE INDEX idx_clientes_estado ON clientes(estado);
-CREATE INDEX idx_instalaciones_cliente ON instalaciones(cliente_id);
-CREATE INDEX idx_contratos_cliente ON contratos(cliente_id);
+COMMENT ON TABLE contratos IS 'Tabla principal de contratos de servicio';
+COMMENT ON COLUMN contratos.id IS 'Identificador único del contrato';
+COMMENT ON COLUMN contratos.numero IS 'Número de contrato único';
+COMMENT ON COLUMN contratos.estado IS 'Estado del contrato: VIGENTE, VENCIDO, CANCELADO, SUSPENDIDO';
+COMMENT ON COLUMN contratos.precio_anual IS 'Precio anual del contrato en euros';
+
+-- ===================================================================
+-- TABLA: PARTES (Detalles de trabajos)
+-- ===================================================================
+CREATE TABLE IF NOT EXISTS partes (
+                                      id SERIAL PRIMARY KEY,
+                                      numero VARCHAR(50) UNIQUE NOT NULL,
+    contrato_id INTEGER NOT NULL REFERENCES contratos(id) ON DELETE CASCADE,
+    fecha_inicio TIMESTAMP NOT NULL,
+    fecha_fin TIMESTAMP,
+    descripcion TEXT,
+    tipo_trabajo VARCHAR(100),
+    estado VARCHAR(20) DEFAULT 'ABIERTO' CHECK (estado IN ('ABIERTO', 'CERRADO', 'CANCELADO')),
+    horas_trabajadas NUMERIC(8, 2),
+    empresa_id INTEGER DEFAULT 1,
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    usuario_creacion VARCHAR(50) DEFAULT 'SYSTEM',
+    fecha_modificacion TIMESTAMP,
+    usuario_modificacion VARCHAR(50),
+    CONSTRAINT fk_contrato FOREIGN KEY (contrato_id) REFERENCES contratos(id) ON DELETE CASCADE
+    );
+
+COMMENT ON TABLE partes IS 'Tabla de partes de trabajo/incidencias';
+COMMENT ON COLUMN partes.id IS 'Identificador único del parte';
+COMMENT ON COLUMN partes.numero IS 'Número de parte único';
+COMMENT ON COLUMN partes.estado IS 'Estado del parte: ABIERTO, CERRADO, CANCELADO';
+
+-- ===================================================================
+-- ÍNDICES PARA PERFORMANCE
+-- ===================================================================
+CREATE INDEX idx_contratos_cliente_id ON contratos(cliente_id);
 CREATE INDEX idx_contratos_estado ON contratos(estado);
 CREATE INDEX idx_contratos_fecha_fin ON contratos(fecha_fin);
-CREATE INDEX idx_partes_contrato ON partes(contrato_id);
+CREATE INDEX idx_contratos_empresa_id ON contratos(empresa_id);
+CREATE INDEX idx_partes_contrato_id ON partes(contrato_id);
 CREATE INDEX idx_partes_estado ON partes(estado);
-CREATE INDEX idx_partes_cliente ON partes(cliente_id);
+CREATE INDEX idx_clientes_empresa_id ON clientes(empresa_id);
+CREATE INDEX idx_instalaciones_empresa_id ON instalaciones(empresa_id);
 
--- Inserts de prueba
-INSERT INTO clientes (nombre, email, telefono, empresa_id, delegacion_id, estado)
-VALUES
-    ('Cliente A', 'clientea@empresa.com', '123456789', 1, 1, 'ACTIVO'),
-    ('Cliente B', 'clienteb@empresa.com', '987654321', 1, 1, 'ACTIVO'),
-    ('Cliente C', 'clientec@empresa.com', '555555555', 1, 2, 'ACTIVO');
+-- ===================================================================
+-- DATOS INICIALES DE PRUEBA
+-- ===================================================================
 
-INSERT INTO instalaciones (cliente_id, codigo, descripcion, direccion, codigo_postal, zona, estado)
-VALUES
-    (1, 'INST-001', 'Instalación Principal A', 'Calle Principal 1', '28001', 'MADRID', 'ACTIVO'),
-    (1, 'INST-002', 'Instalación Secundaria A', 'Calle Secundaria 1', '28002', 'MADRID', 'ACTIVO'),
-    (2, 'INST-003', 'Instalación Principal B', 'Calle Principal 2', '08002', 'BARCELONA', 'ACTIVO'),
-    (3, 'INST-004', 'Instalación Principal C', 'Calle Principal 3', '46001', 'VALENCIA', 'ACTIVO');
+-- Clientes
+INSERT INTO clientes (nombre, email, telefono) VALUES
+                                                   ('Cliente A - Empresa X', 'contacto@empresa-a.com', '912345678'),
+                                                   ('Cliente B - Empresa Y', 'info@empresa-b.com', '934567890'),
+                                                   ('Cliente C - Empresa Z', 'contact@empresa-c.es', '955678901')
+    ON CONFLICT DO NOTHING;
 
-INSERT INTO contratos (numero, cliente_id, instalacion_id, tipo_contrato, estado, cobertura_material, cobertura_mano_obra, cobertura_fin_semana, fecha_inicio, fecha_fin, precio_anual, porcentaje_central, empresa_id)
-VALUES
-    ('CONT-2024-001', 1, 1, 'MANTENIMIENTO', 'VIGENTE', 1, 1, 0, '2024-01-01', '2024-12-31', 1200.00, 70, 1),
-    ('CONT-2024-002', 1, 2, 'REVISION', 'VIGENTE', 1, 1, 1, '2024-01-01', '2024-12-31', 800.00, 70, 1),
-    ('CONT-2024-003', 2, 3, 'MANTENIMIENTO', 'VIGENTE', 1, 1, 0, '2024-02-01', '2025-01-31', 1500.00, 65, 1),
-    ('CONT-2024-004', 3, 4, 'MANTENIMIENTO', 'VENCIDO', 1, 1, 0, '2023-01-01', '2023-12-31', 1000.00, 70, 1);
+-- Instalaciones
+INSERT INTO instalaciones (ubicacion, tipo, descripcion) VALUES
+                                                             ('Madrid - Calle Mayor 1', 'Oficina', 'Oficina central Madrid'),
+                                                             ('Barcelona - Av. Diagonal 100', 'Almacén', 'Centro de distribución'),
+                                                             ('Valencia - Calle 9 de Octubre 50', 'Planta', 'Planta de producción'),
+                                                             ('Bilbao - Gran Vía 25', 'Oficina', 'Oficina regional Euskadi')
+    ON CONFLICT DO NOTHING;
+
+-- Contratos
+INSERT INTO contratos (numero, cliente_id, instalacion_id, tipo_contrato, estado, fecha_inicio, fecha_fin, precio_anual, porcentaje_central) VALUES
+                                                                                                                                                 ('CTR-2024-001', 1, 1, 'MANTENIMIENTO', 'VIGENTE', '2024-01-01', '2025-12-31', 12000.00, 70),
+                                                                                                                                                 ('CTR-2024-002', 1, 2, 'SERVICIO', 'VIGENTE', '2024-06-01', '2025-05-31', 18000.00, 65),
+                                                                                                                                                 ('CTR-2024-003', 2, 3, 'MANTENIMIENTO', 'VIGENTE', '2024-03-01', '2025-02-28', 15000.00, 70),
+                                                                                                                                                 ('CTR-2024-004', 3, 4, 'SERVICIO', 'VIGENTE', '2024-09-01', '2025-08-31', 9000.00, 75),
+                                                                                                                                                 ('CTR-2023-001', 1, 1, 'MANTENIMIENTO', 'VENCIDO', '2023-01-01', '2024-01-01', 10000.00, 70)
+    ON CONFLICT DO NOTHING;
+
+-- Partes de ejemplo
+INSERT INTO partes (numero, contrato_id, fecha_inicio, fecha_fin, descripcion, tipo_trabajo, estado, horas_trabajadas) VALUES
+                                                                                                                           ('PARTE-001', 1, '2025-01-10 09:00:00', '2025-01-10 12:30:00', 'Revisión de equipos', 'Revisión Preventiva', 'CERRADO', 3.5),
+                                                                                                                           ('PARTE-002', 1, '2025-01-15 14:00:00', '2025-01-15 17:00:00', 'Reparación de software', 'Reparación', 'CERRADO', 3.0),
+                                                                                                                           ('PARTE-003', 2, '2025-01-20 08:00:00', NULL, 'Mantenimiento sistemas', 'Mantenimiento', 'ABIERTO', NULL)
+    ON CONFLICT DO NOTHING;
+
+-- ===================================================================
+-- VERIFICACIÓN
+-- ===================================================================
+-- Después de ejecutar este script, verificá con:
+-- SELECT COUNT(*) FROM clientes;
+-- SELECT COUNT(*) FROM contratos;
+-- SELECT COUNT(*) FROM partes;
