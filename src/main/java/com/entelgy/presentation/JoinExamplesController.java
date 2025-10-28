@@ -5,6 +5,11 @@ import com.entelgy.application.dto.ClienteConContratosDTO;
 import com.entelgy.application.dto.ContratoActivoClienteEmpresaDTO;
 import com.entelgy.application.dto.ContratoClienteDTO;
 import com.entelgy.application.dto.ContratoDetalleDTO;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -34,20 +39,18 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/reportes/joins")
 @RequiredArgsConstructor
+@Tag(name = "Reportes con JOINs", description = "Reportes avanzados y análisis de cartera usando JOINs complejos")
 public class JoinExamplesController {
 
     private final JoinExamplesApplicationService joinExamplesService;
 
-    // ============= REPORTES GENERALES =============
-
-    /**
-     * GET /api/reportes/joins/contratos-activos
-     *
-     * Retorna todos los contratos VIGENTES con información del cliente
-     * Incluye lógica de filtrado y análisis de cartera
-     *
-     * @return 200 OK con Lista de ContratoClienteDTO (puede estar vacía)
-     */
+    @Operation(
+            summary = "Obtener contratos activos con información del cliente",
+            description = "Retorna todos los contratos VIGENTES con información del cliente. Incluye lógica de filtrado y análisis de cartera"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Contratos activos obtenidos exitosamente")
+    })
     @GetMapping("/contratos-activos")
     public ResponseEntity<?> getContratosActivos() {
         log.debug("GET /api/reportes/joins/contratos-activos");
@@ -61,14 +64,13 @@ public class JoinExamplesController {
         ));
     }
 
-    /**
-     * GET /api/reportes/joins/clientes-sin-contratos
-     *
-     * Retorna clientes que NO tienen contratos vigentes
-     * Útil para identificar oportunidades de venta
-     *
-     * @return 200 OK con Lista de ClienteConContratosDTO (puede estar vacía)
-     */
+    @Operation(
+            summary = "Obtener clientes sin contratos vigentes",
+            description = "Retorna clientes que NO tienen contratos vigentes. Útil para identificar oportunidades de venta"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Búsqueda de clientes sin contratos completada")
+    })
     @GetMapping("/clientes-sin-contratos")
     public ResponseEntity<?> getClientesSinContratos() {
         log.debug("GET /api/reportes/joins/clientes-sin-contratos");
@@ -91,18 +93,17 @@ public class JoinExamplesController {
         return ResponseEntity.ok(respuesta);
     }
 
-    /**
-     * GET /api/reportes/joins/contratos-detalle
-     *
-     * Retorna contratos vigentes con detalles completos:
-     * - Información del cliente (nombre, teléfono)
-     * - Información de la instalación (ubicación, tipo)
-     * - Precio anual
-     *
-     * Incluye análisis de cartera y detección de anomalías
-     *
-     * @return 200 OK con Lista de ContratoDetalleDTO con análisis
-     */
+    @Operation(
+            summary = "Obtener contratos con detalle completo",
+            description = """
+                    Retorna contratos vigentes con detalles completos: información del cliente (nombre, teléfono), 
+                    información de la instalación (ubicación, tipo) y precio anual. 
+                    Incluye análisis de cartera y detección de anomalías
+                    """
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Reporte detallado de contratos obtenido con análisis de cartera")
+    })
     @GetMapping("/contratos-detalle")
     public ResponseEntity<?> getContratosDetalle() {
         log.debug("GET /api/reportes/joins/contratos-detalle");
@@ -117,7 +118,6 @@ public class JoinExamplesController {
         );
 
         if (!resultados.isEmpty()) {
-            // Análisis: Calcular totales
             double totalCartera = resultados.stream()
                     .mapToDouble(dto -> dto.getPrecioAnual().doubleValue())
                     .sum();
@@ -142,16 +142,13 @@ public class JoinExamplesController {
         return ResponseEntity.ok(respuesta);
     }
 
-    /**
-     * GET /api/reportes/joins/cartera-empresarial
-     *
-     * Retorna contratos vigentes de clientes empresariales
-     * (emails que contienen 'empresa')
-     *
-     * Incluye análisis TOP 3 por facturación
-     *
-     * @return 200 OK con Lista de ContratoActivoClienteEmpresaDTO
-     */
+    @Operation(
+            summary = "Obtener cartera empresarial",
+            description = "Retorna contratos vigentes de clientes empresariales (emails que contienen 'empresa'). Incluye análisis TOP 3 por facturación"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Cartera empresarial obtenida exitosamente con análisis de segmento")
+    })
     @GetMapping("/cartera-empresarial")
     public ResponseEntity<?> getCarteraEmpresarial() {
         log.debug("GET /api/reportes/joins/cartera-empresarial");
@@ -166,7 +163,6 @@ public class JoinExamplesController {
         );
 
         if (!resultados.isEmpty()) {
-            // Análisis: Ingresos por segmento
             double ingresosTotales = resultados.stream()
                     .mapToDouble(dto -> dto.getPrecioAnual().doubleValue())
                     .sum();
@@ -190,20 +186,20 @@ public class JoinExamplesController {
         return ResponseEntity.ok(respuesta);
     }
 
-    // ============= BÚSQUEDAS ESPECÍFICAS =============
-
-    /**
-     * GET /api/reportes/joins/contrato/{id}
-     *
-     * Retorna un contrato específico con información del cliente
-     *
-     * @param id ID del contrato a buscar
-     * @return 200 OK con ContratoClienteDTO
-     *         400 BAD REQUEST si ID es inválido
-     *         404 NOT FOUND si no existe el contrato
-     */
+    @Operation(
+            summary = "Obtener contrato específico con información del cliente",
+            description = "Retorna un contrato específico con información del cliente asociado"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Contrato encontrado exitosamente"),
+            @ApiResponse(responseCode = "400", description = "ID de contrato inválido"),
+            @ApiResponse(responseCode = "404", description = "Contrato no encontrado")
+    })
     @GetMapping("/contrato/{id}")
-    public ResponseEntity<?> getContratoEspecifico(@PathVariable Integer id) {
+    public ResponseEntity<?> getContratoEspecifico(
+            @Parameter(description = "ID del contrato a buscar", example = "1", required = true)
+            @PathVariable Integer id) {
+
         log.debug("GET /api/reportes/joins/contrato/{}", id);
 
         if (id == null || id <= 0) {
@@ -230,16 +226,13 @@ public class JoinExamplesController {
         ));
     }
 
-    // ============= ESTADÍSTICAS =============
-
-    /**
-     * GET /api/reportes/joins/estadisticas
-     *
-     * Retorna estadísticas de contratos:
-     * - Conteo por estado (VIGENTE, VENCIDO, CANCELADO, etc)
-     *
-     * @return 200 OK con Map de estadísticas
-     */
+    @Operation(
+            summary = "Obtener estadísticas de contratos",
+            description = "Retorna estadísticas de contratos agrupadas por estado (VIGENTE, VENCIDO, CANCELADO, etc)"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Estadísticas obtenidas exitosamente")
+    })
     @GetMapping("/estadisticas")
     public ResponseEntity<?> getEstadisticas() {
         log.debug("GET /api/reportes/joins/estadisticas");
@@ -263,9 +256,6 @@ public class JoinExamplesController {
 
     // ============= UTILIDADES PRIVADAS PARA FORMATEAR RESPUESTAS =============
 
-    /**
-     * Crea respuesta exitosa estándar
-     */
     private Map<String, Object> crearRespuestaExitosa(String mensaje, int cantidad, Object datos) {
         Map<String, Object> respuesta = new HashMap<>();
         respuesta.put("timestamp", LocalDateTime.now());
@@ -278,9 +268,6 @@ public class JoinExamplesController {
         return respuesta;
     }
 
-    /**
-     * Crea respuesta de error (para errores no controlados)
-     */
     private Map<String, Object> crearRespuestaError(HttpStatus status, String error, String detalle) {
         Map<String, Object> respuesta = new HashMap<>();
         respuesta.put("timestamp", LocalDateTime.now());

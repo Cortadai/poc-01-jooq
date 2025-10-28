@@ -1,0 +1,168 @@
+# Swagger/OpenAPI - Guía de Uso
+
+## 📚 Documentación Añadida
+
+Se ha integrado **Swagger/OpenAPI 3.0** en tu POC para documentar todos los endpoints de manera interactiva.
+
+## 🚀 Cómo Acceder
+
+Una vez que arranques tu aplicación Spring Boot:
+
+```bash
+mvn spring-boot:run
+```
+
+Accede a Swagger UI en tu navegador:
+
+**URL Principal:** http://localhost:8080/swagger-ui.html
+
+**API Docs (JSON):** http://localhost:8080/v3/api-docs
+
+## 📋 Endpoints Documentados
+
+### 1. **Contratos** (`/api/contratos`)
+- ✅ POST `/api/contratos` - Crear nuevo contrato
+- ✅ GET `/api/contratos/{id}` - Obtener contrato por ID
+- ✅ GET `/api/contratos` - Listar contratos con filtros opcionales
+- ✅ GET `/api/contratos/cliente/{clienteId}` - Listar contratos de un cliente
+- ✅ GET `/api/contratos/proximos-a-vencer` - Contratos próximos a vencer
+- ✅ GET `/api/contratos/vencidos` - Contratos vencidos
+- ✅ GET `/api/contratos/health` - Health check
+
+### 2. **Reportes con JOINs** (`/api/reportes/joins`)
+- ✅ GET `/api/reportes/joins/contratos-activos` - Contratos activos con info del cliente
+- ✅ GET `/api/reportes/joins/clientes-sin-contratos` - Clientes sin contratos vigentes
+- ✅ GET `/api/reportes/joins/contratos-detalle` - Contratos con detalle completo
+- ✅ GET `/api/reportes/joins/cartera-empresarial` - Cartera empresarial
+- ✅ GET `/api/reportes/joins/contrato/{id}` - Contrato específico con cliente
+- ✅ GET `/api/reportes/joins/estadisticas` - Estadísticas por estado
+
+### 3. **Consultas Nativas** (`/api/native-queries`)
+- ✅ Queries simples (vigentes, contar, por ID)
+- ✅ Queries complejas (análisis de cartera, top clientes)
+- ✅ Queries con filtros (buscar, filtrar por múltiples criterios)
+- ✅ CTEs y Window Functions (ranking, running total)
+- ✅ Análisis y clasificación (riesgo, promedio)
+- ✅ Paginación
+- ✅ Reporting (mensual, dashboard)
+- ✅ Operaciones (INSERT, UPDATE, DELETE)
+
+### 4. **Procedimientos Almacenados** (`/api/procedures`)
+- ✅ GET `/api/procedures/actualizar-vencidos` - Actualizar contratos vencidos
+- ✅ GET `/api/procedures/reporte-cartera` - Reporte de cartera
+- ✅ POST `/api/procedures/crear-parte` - Crear parte de trabajo
+
+## 🎨 Características de Swagger UI
+
+### Interfaz Interactiva
+- **Try it out**: Puedes probar cada endpoint directamente desde el navegador
+- **Schemas**: Visualiza los modelos de Request y Response
+- **Ejemplos**: Cada parámetro tiene ejemplos de uso
+- **Códigos de respuesta**: Documenta todos los códigos HTTP posibles (200, 400, 404, etc.)
+
+### Agrupación por Tags
+Los endpoints están organizados en 4 categorías:
+1. 🏷️ **Contratos** - CRUD de contratos
+2. 📊 **Reportes con JOINs** - Análisis avanzados
+3. 🔍 **Consultas Nativas** - Queries SQL complejas
+4. ⚙️ **Procedimientos Almacenados** - Stored procedures
+
+## 📝 Cambios Realizados
+
+### 1. **Dependencia Maven** (`pom.xml`)
+```xml
+<dependency>
+    <groupId>org.springdoc</groupId>
+    <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+    <version>2.3.0</version>
+</dependency>
+```
+
+### 2. **Configuración** (`application.yaml`)
+```yaml
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operationsSorter: method
+    tagsSorter: alpha
+```
+
+### 3. **Clase de Configuración**
+- `OpenApiConfig.java` - Configuración global de OpenAPI
+
+### 4. **Anotaciones en Controladores**
+Todos los controladores ahora tienen:
+- `@Tag` - Para agrupar endpoints
+- `@Operation` - Descripción de cada endpoint
+- `@ApiResponses` - Códigos de respuesta documentados
+- `@Parameter` - Descripción de parámetros
+
+## 🔧 Personalización
+
+### Cambiar el Puerto
+Si tu aplicación usa otro puerto, modifica en `application.yaml`:
+```yaml
+server:
+  port: 8081
+```
+
+Accede entonces a: http://localhost:8081/swagger-ui.html
+
+### Personalizar Info General
+Edita `OpenApiConfig.java` para cambiar:
+- Título de la API
+- Versión
+- Descripción
+- Información de contacto
+- Servidores disponibles
+
+### Añadir Seguridad
+Si necesitas autenticación, puedes añadir en `OpenApiConfig.java`:
+```java
+.components(new Components()
+    .addSecuritySchemes("bearer-jwt", new SecurityScheme()
+        .type(SecurityScheme.Type.HTTP)
+        .scheme("bearer")
+        .bearerFormat("JWT")))
+```
+
+## ✨ Ventajas
+
+1. **Documentación automática**: Se genera desde el código
+2. **Siempre actualizada**: Si cambias un endpoint, la doc se actualiza sola
+3. **Testing integrado**: Prueba endpoints sin Postman
+4. **Colaboración**: Comparte la URL con tu equipo
+5. **Estándar industrial**: OpenAPI es el estándar para REST APIs
+
+## 📦 Próximos Pasos
+
+### Para Producción
+1. Considera desactivar Swagger en producción:
+```yaml
+springdoc:
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:false}
+```
+
+2. Añade autenticación a Swagger UI si es necesario
+
+### Exportar Documentación
+Puedes exportar la especificación OpenAPI:
+```bash
+curl http://localhost:8080/v3/api-docs > openapi.json
+```
+
+## 🆘 Soporte
+
+Si tienes problemas:
+1. Verifica que la aplicación esté corriendo en el puerto correcto
+2. Revisa los logs de Spring Boot
+3. Asegúrate de que la dependencia de springdoc esté en el classpath
+
+---
+
+**¡Listo!** 🎉 Ahora tienes documentación completa e interactiva para tu POC de JOOQ + PostgreSQL.
